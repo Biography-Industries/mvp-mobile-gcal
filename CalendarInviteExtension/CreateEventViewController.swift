@@ -25,6 +25,9 @@ class CreateEventViewController: UIViewController {
     private let createButton = UIButton(type: .system)
     private let cancelButton = UIButton(type: .system)
     
+    // MARK: - Keyboard handling
+    private var keyboardHeight: CGFloat = 0
+    
     // MARK: - Initialization
     init(eventStore: EKEventStore, delegate: CreateEventViewControllerDelegate?) {
         self.eventStore = eventStore
@@ -41,14 +44,77 @@ class CreateEventViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupDefaultValues()
+        setupKeyboardObservers()
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        removeKeyboardObservers()
+    }
+    
+    // MARK: - Keyboard Observers
+    private func setupKeyboardObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillShow),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+    
+    private func removeKeyboardObservers() {
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
+    @objc private func keyboardWillShow(notification: NSNotification) {
+        guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else { return }
+        
+        keyboardHeight = keyboardFrame.cgRectValue.height
+        
+        let contentInsets = UIEdgeInsets(top: 0, left: 0, bottom: keyboardHeight, right: 0)
+        scrollView.contentInset = contentInsets
+        scrollView.scrollIndicatorInsets = contentInsets
+        
+        // Scroll to active field if needed
+        if let activeField = findFirstResponder() {
+            let rect = activeField.convert(activeField.bounds, to: scrollView)
+            scrollView.scrollRectToVisible(rect, animated: true)
+        }
+    }
+    
+    @objc private func keyboardWillHide(notification: NSNotification) {
+        keyboardHeight = 0
+        scrollView.contentInset = .zero
+        scrollView.scrollIndicatorInsets = .zero
+    }
+    
+    private func findFirstResponder() -> UIView? {
+        if titleTextField.isFirstResponder { return titleTextField }
+        if locationTextField.isFirstResponder { return locationTextField }
+        if notesTextView.isFirstResponder { return notesTextView }
+        return nil
     }
     
     // MARK: - UI Setup
     private func setupUI() {
         view.backgroundColor = .systemBackground
         
+        // Add tap gesture to dismiss keyboard
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tapGesture.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapGesture)
+        
         // Configure scroll view
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.keyboardDismissMode = .onDrag
         contentView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
@@ -58,6 +124,7 @@ class CreateEventViewController: UIViewController {
         titleTextField.borderStyle = .roundedRect
         titleTextField.font = .systemFont(ofSize: 16)
         titleTextField.delegate = self
+        titleTextField.returnKeyType = .next
         
         // Configure date pickers
         startDatePicker.datePickerMode = .dateAndTime
@@ -73,6 +140,7 @@ class CreateEventViewController: UIViewController {
         locationTextField.borderStyle = .roundedRect
         locationTextField.font = .systemFont(ofSize: 16)
         locationTextField.delegate = self
+        locationTextField.returnKeyType = .next
         
         // Configure notes text view
         notesTextView.layer.borderColor = UIColor.systemGray4.cgColor
@@ -80,6 +148,7 @@ class CreateEventViewController: UIViewController {
         notesTextView.layer.cornerRadius = 8
         notesTextView.font = .systemFont(ofSize: 16)
         notesTextView.delegate = self
+        notesTextView.returnKeyType = .done
         
         // Configure buttons
         createButton.setTitle("Send Invitation", for: .normal)
@@ -135,6 +204,10 @@ class CreateEventViewController: UIViewController {
         setupConstraints(titleLabel: titleLabel, startDateLabel: startDateLabel, endDateLabel: endDateLabel, locationLabel: locationLabel, notesLabel: notesLabel)
     }
     
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+    
     private func createLabel(text: String) -> UILabel {
         let label = UILabel()
         label.text = text
@@ -149,7 +222,7 @@ class CreateEventViewController: UIViewController {
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             
             // Content view constraints
             contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
@@ -206,7 +279,7 @@ class CreateEventViewController: UIViewController {
             notesTextView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             notesTextView.heightAnchor.constraint(equalToConstant: 100),
             
-            // Buttons
+            // Buttons - Add extra bottom padding to ensure they're always visible above keyboard
             createButton.topAnchor.constraint(equalTo: notesTextView.bottomAnchor, constant: 32),
             createButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             createButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
@@ -214,7 +287,7 @@ class CreateEventViewController: UIViewController {
             
             cancelButton.topAnchor.constraint(equalTo: createButton.bottomAnchor, constant: 16),
             cancelButton.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            cancelButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
+            cancelButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -40)
         ])
     }
     
@@ -303,6 +376,14 @@ extension CreateEventViewController: UITextFieldDelegate {
         }
         return true
     }
+    
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        // Scroll to the text field when it becomes active
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            let rect = textField.convert(textField.bounds, to: self.scrollView)
+            self.scrollView.scrollRectToVisible(rect, animated: true)
+        }
+    }
 }
 
 // MARK: - UITextViewDelegate
@@ -317,5 +398,13 @@ extension CreateEventViewController: UITextViewDelegate {
     func textViewShouldReturn(_ textView: UITextView) -> Bool {
         textView.resignFirstResponder()
         return true
+    }
+    
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        // Scroll to the text view when it becomes active
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            let rect = textView.convert(textView.bounds, to: self.scrollView)
+            self.scrollView.scrollRectToVisible(rect, animated: true)
+        }
     }
 } 

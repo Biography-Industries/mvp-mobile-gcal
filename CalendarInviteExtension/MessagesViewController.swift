@@ -39,6 +39,30 @@ class MessagesViewController: MSMessagesAppViewController {
         presentViewController(for: conversation, with: presentationStyle)
     }
     
+    override func didReceive(_ message: MSMessage, conversation: MSConversation) {
+        super.didReceive(message, conversation: conversation)
+        
+        // Handle live layout updates
+        if presentationStyle == .transcript {
+            if let event = CalendarEvent(message: message) {
+                currentEvent = event
+                // Update the live layout view if needed
+                updateLiveLayoutIfNeeded(for: conversation, with: event)
+            }
+        }
+    }
+    
+    // MARK: - Live Layout Support
+    private func updateLiveLayoutIfNeeded(for conversation: MSConversation, with event: CalendarEvent) {
+        // This method handles live updates when messages are received
+        // The live layout will automatically update the UI
+        DispatchQueue.main.async {
+            if self.presentationStyle == .transcript {
+                self.presentViewController(for: conversation, with: self.presentationStyle)
+            }
+        }
+    }
+    
     // MARK: - Private Methods
     private func requestCalendarAccess() {
         eventStore.requestAccess(to: .event) { granted, error in
@@ -67,6 +91,8 @@ class MessagesViewController: MSMessagesAppViewController {
         
         if presentationStyle == .compact {
             controller = createCompactViewController(for: conversation)
+        } else if presentationStyle == .transcript {
+            controller = createTranscriptViewController(for: conversation)
         } else {
             controller = createExpandedViewController(for: conversation)
         }
@@ -96,6 +122,17 @@ class MessagesViewController: MSMessagesAppViewController {
         }
     }
     
+    private func createTranscriptViewController(for conversation: MSConversation) -> UIViewController {
+        // Create a live layout view controller for transcript presentation
+        if let selectedMessage = conversation.selectedMessage,
+           let event = CalendarEvent(message: selectedMessage) {
+            return LiveEventResponseViewController(event: event, participantID: participantID, delegate: self)
+        } else {
+            // Fallback to compact view if no event is selected
+            return createCompactViewController(for: conversation)
+        }
+    }
+    
     private func createExpandedViewController(for conversation: MSConversation) -> UIViewController {
         // Check if there's a selected message with an event
         if let selectedMessage = conversation.selectedMessage,
@@ -118,17 +155,20 @@ class MessagesViewController: MSMessagesAppViewController {
         var components = URLComponents()
         components.queryItems = event.queryItems
         
-        let layout = MSMessageTemplateLayout()
-        layout.caption = caption
-        layout.subcaption = event.formattedDateRange
-        layout.trailingCaption = event.location
+        // Create alternate layout for devices that don't support live layouts
+        let alternateLayout = MSMessageTemplateLayout()
+        alternateLayout.caption = caption
+        alternateLayout.subcaption = event.formattedDateRange
+        alternateLayout.trailingCaption = event.location
+        alternateLayout.image = createEventPreviewImage(for: event)
         
-        // Create a simple event preview image
-        layout.image = createEventPreviewImage(for: event)
+        // Create live layout for interactive responses
+        let liveLayout = MSMessageLiveLayout(alternateLayout: alternateLayout)
         
         let message = MSMessage(session: session ?? MSSession())
         message.url = components.url!
-        message.layout = layout
+        message.layout = liveLayout
+        message.summaryText = "\(event.organizerName) invited you to \(event.title)"
         
         return message
     }
@@ -190,6 +230,17 @@ class MessagesViewController: MSMessagesAppViewController {
                 responseText.draw(in: responseRect, withAttributes: dateAttributes)
             }
         }
+    }
+    
+    // MARK: - Content Size Support
+    override func contentSizeThatFits(_ size: CGSize) -> CGSize {
+        // Return appropriate size for live layout in transcript presentation
+        if presentationStyle == .transcript {
+            return CGSize(width: size.width, height: 160) // Compact height for live layout
+        }
+        
+        // Default size for other presentation styles
+        return super.contentSizeThatFits(size)
     }
 }
 
@@ -254,6 +305,20 @@ extension MessagesViewController: EventDetailViewControllerDelegate {
 // MARK: - EventResponseViewControllerDelegate
 extension MessagesViewController: EventResponseViewControllerDelegate {
     func eventResponseViewController(_ controller: EventResponseViewController, didRespondToEvent event: CalendarEvent, with response: CalendarEvent.EventResponse) {
+        handleEventResponse(event: event, response: response)
+    }
+}
+
+// MARK: - LiveEventResponseViewControllerDelegate
+extension MessagesViewController: LiveEventResponseViewControllerDelegate {
+    func liveEventResponseViewController(_ controller: LiveEventResponseViewController, didRespondToEvent event: CalendarEvent, with response: CalendarEvent.EventResponse) {
+        handleEventResponse(event: event, response: response)
+    }
+}
+
+// MARK: - Shared Response Handling
+extension MessagesViewController {
+    private func handleEventResponse(event: CalendarEvent, response: CalendarEvent.EventResponse) {
         guard let conversation = activeConversation else { return }
         
         var updatedEvent = event
@@ -266,7 +331,8 @@ extension MessagesViewController: EventResponseViewControllerDelegate {
             session: conversation.selectedMessage?.session
         )
         
-        conversation.insert(message) { error in
+        // Use send instead of insert for live layout updates
+        conversation.send(message) { error in
             if let error = error {
                 print("Error responding to event: \(error)")
             }
@@ -277,7 +343,10 @@ extension MessagesViewController: EventResponseViewControllerDelegate {
             addEventToCalendar(updatedEvent)
         }
         
-        dismiss()
+        // Don't dismiss for live layout - let it update in place
+        if presentationStyle != .transcript {
+            dismiss()
+        }
     }
     
     private func addEventToCalendar(_ event: CalendarEvent) {
@@ -314,4 +383,8 @@ protocol EventDetailViewControllerDelegate: AnyObject {
 
 protocol EventResponseViewControllerDelegate: AnyObject {
     func eventResponseViewController(_ controller: EventResponseViewController, didRespondToEvent event: CalendarEvent, with response: CalendarEvent.EventResponse)
+}
+
+protocol LiveEventResponseViewControllerDelegate: AnyObject {
+    func liveEventResponseViewController(_ controller: LiveEventResponseViewController, didRespondToEvent event: CalendarEvent, with response: CalendarEvent.EventResponse)
 } 
