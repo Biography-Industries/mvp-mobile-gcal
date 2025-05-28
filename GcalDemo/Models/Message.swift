@@ -27,9 +27,17 @@ enum Sender {
 }
 
 enum MessageContent {
+    
     case text(String)
 //    case table(TableData)
-//    case profile(ProfileData)
+    case profile(ProfileData)
+    
+    var textValue: String? {
+           if case let .text(value) = self {
+               return value
+           }
+           return nil
+    }
 }
 
 // MARK: will be used later
@@ -40,7 +48,9 @@ struct TableData {
 
 struct ProfileData {
     let name: String
-    let age: Int
-    let avatarURL: URL
-    let bio: String
+    let location: String
+    let phoneNumber: String
+//    let age: Int
+//    let avatarURL: URL
+//    let bio: String
 }

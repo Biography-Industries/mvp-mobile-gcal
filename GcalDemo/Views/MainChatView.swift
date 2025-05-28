@@ -31,7 +31,7 @@ struct MainChatView: View {
                 
                 Button {
                     // TODO: action (send message)
-                    chatViewModel.sendMessage()
+                    chatViewModel.sendDemoMessage()
                 } label: {
                     Image(systemName: "paperplane.fill")
                         .foregroundColor(.blue)
