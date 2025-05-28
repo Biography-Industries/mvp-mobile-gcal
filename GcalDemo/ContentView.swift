@@ -39,74 +39,22 @@ struct ContentView: View {
     @State private var appleEventEndDate: Date = Calendar.current.date(byAdding: .hour, value: 1, to: Date()) ?? Date()
     @State private var appleEventNotes: String = ""
     
+    @State private var navigateToContacts = false
+    
     var body: some View {
-        NavigationView {
-            VStack {
-                // Add device debugging information
-                if ProcessInfo.processInfo.environment["DEBUG_LAYOUT"] != nil {
-                    VStack {
-                        Text("Debug Info")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Text("Device: \(UIDevice.current.name)")
-                            .font(.caption2)
-                        Text("Screen: \(UIScreen.main.bounds.size.width)x\(UIScreen.main.bounds.size.height)")
-                            .font(.caption2)
-                    }
-                    .padding(4)
-                    .background(Color.yellow.opacity(0.2))
-                    .cornerRadius(4)
-                }
-                
-                Picker("Select Calendar Service", selection: $calendarSettings.selectedService) {
-                    ForEach(CalendarServiceType.allCases) { service in
-                        Text(service.rawValue).tag(service)
-                    }
-                }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding()
-
-                switch calendarSettings.selectedService {
-                case .google:
-                    GoogleCalendarView()
-                        .onAppear {
-                            print("📱 ContentView: Showing Google Calendar view on \(UIDevice.current.name)")
-                        }
-                case .apple:
-                    AppleCalendarView()
-                        .onAppear {
-                            print("📱 ContentView: Showing Apple Calendar view on \(UIDevice.current.name)")
-                        }
-                }
+        NavigationStack {
+            ZStack {
+                mainContent
             }
-            .navigationTitle(navigationTitleForSelectedService())
-            .onAppear {
-                // Log safe area and layout information
-                DispatchQueue.main.async {
-                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                       let window = windowScene.windows.first {
-                        print("🔍 LAYOUT DEBUG INFO:")
-                        print("- Device: \(UIDevice.current.name)")
-                        print("- Model: \(UIDevice.current.model)")
-                        print("- Screen bounds: \(UIScreen.main.bounds)")
-                        print("- Screen scale: \(UIScreen.main.scale)")
-                        print("- Window safe area: \(window.safeAreaInsets)")
-                        print("- Window frame: \(window.frame)")
-                        
-                        // Check for potential layout issues
-                        if UIScreen.main.bounds.width > 400 {
-                            print("⚠️ Large screen detected - checking for layout constraints")
-                        }
-                        
-                        if UIScreen.main.scale > 3.0 {
-                            print("⚠️ High DPI screen detected - checking asset scaling")
-                        }
-                    }
-                }
+            .navigationDestination(isPresented: $navigateToContacts) {
+                ContactsView()
             }
-             // Toolbar will now be part of GoogleCalendarView or AppleCalendarView
         }
-        .navigationViewStyle(StackNavigationViewStyle()) // Force stack style for consistency
+        
+//        NavigationView {
+//            mainContent
+//        }
+//        .navigationViewStyle(StackNavigationViewStyle()) // Force stack style for consistency
     }
 
     private func navigationTitleForSelectedService() -> String {
@@ -123,7 +71,11 @@ struct ContentView: View {
     private func GoogleCalendarView() -> some View {
         VStack {
             if authViewModel.isAuthenticated, let user = authViewModel.googleUser {
-                googleCalendarListView(user: user)
+//                googleCalendarListView(user: user)
+                Color.clear
+                    .onAppear {
+                        navigateToContacts = true
+                    }
             } else {
                 googleSignInView
             }
@@ -478,9 +430,17 @@ struct ContentView: View {
                         Spacer()
                     }
                 case .authorized:
-                    appleCalendarListView()
+//                    appleCalendarListView()
+                    Color.clear
+                        .onAppear {
+                            navigateToContacts = true
+                        }
                 case .fullAccess:
-                    appleCalendarListView()
+//                    appleCalendarListView()
+                    Color.clear
+                        .onAppear {
+                            navigateToContacts = true
+                        }
                 @unknown default:
                     VStack {
                         Image(systemName: "questionmark.circle")
@@ -720,6 +680,78 @@ struct ContentView: View {
     }
 }
 
+// MARK: Componenets
+extension ContentView {
+    @ViewBuilder
+    private var mainContent: some View {
+        VStack {
+            // Add device debugging information
+            if ProcessInfo.processInfo.environment["DEBUG_LAYOUT"] != nil {
+                VStack {
+                    Text("Debug Info")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text("Device: \(UIDevice.current.name)")
+                        .font(.caption2)
+                    Text("Screen: \(UIScreen.main.bounds.size.width)x\(UIScreen.main.bounds.size.height)")
+                        .font(.caption2)
+                }
+                .padding(4)
+                .background(Color.yellow.opacity(0.2))
+                .cornerRadius(4)
+            }
+            
+            Picker("Select Calendar Service", selection: $calendarSettings.selectedService) {
+                ForEach(CalendarServiceType.allCases) { service in
+                    Text(service.rawValue).tag(service)
+                }
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding()
+
+            switch calendarSettings.selectedService {
+            case .google:
+                GoogleCalendarView()
+                    .onAppear {
+                        print("📱 ContentView: Showing Google Calendar view on \(UIDevice.current.name)")
+                    }
+            case .apple:
+                AppleCalendarView()
+                    .onAppear {
+                        print("📱 ContentView: Showing Apple Calendar view on \(UIDevice.current.name)")
+                    }
+            }
+        }
+        .navigationTitle(navigationTitleForSelectedService())
+        .onAppear {
+            // Log safe area and layout information
+            DispatchQueue.main.async {
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let window = windowScene.windows.first {
+                    print("🔍 LAYOUT DEBUG INFO:")
+                    print("- Device: \(UIDevice.current.name)")
+                    print("- Model: \(UIDevice.current.model)")
+                    print("- Screen bounds: \(UIScreen.main.bounds)")
+                    print("- Screen scale: \(UIScreen.main.scale)")
+                    print("- Window safe area: \(window.safeAreaInsets)")
+                    print("- Window frame: \(window.frame)")
+                    
+                    // Check for potential layout issues
+                    if UIScreen.main.bounds.width > 400 {
+                        print("⚠️ Large screen detected - checking for layout constraints")
+                    }
+                    
+                    if UIScreen.main.scale > 3.0 {
+                        print("⚠️ High DPI screen detected - checking asset scaling")
+                    }
+                }
+            }
+        }
+         // Toolbar will now be part of GoogleCalendarView or AppleCalendarView
+
+    }
+}
+
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
@@ -729,3 +761,4 @@ struct ContentView_Previews: PreviewProvider {
             .environmentObject(CalendarSettings())
     }
 }
+

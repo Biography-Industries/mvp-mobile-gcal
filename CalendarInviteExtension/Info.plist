@@ -20,6 +20,10 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>This extension needs access to your calendar to create and share event invitations.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>This app needs access to your contacts to coordinate events</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionMainStoryboard</key>
@@ -27,7 +31,5 @@
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.message-payload-provider</string>
 	</dict>
-	<key>NSCalendarsUsageDescription</key>
-	<string>This extension needs access to your calendar to create and share event invitations.</string>
 </dict>
-</plist> 
+</plist>
