@@ -1,0 +1,570 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0D35EE242DE50EB1004F129C /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 0D35EE232DE50EB1004F129C /* GoogleSignIn */; };
+		0D35EE262DE50EB1004F129C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 0D35EE252DE50EB1004F129C /* GoogleSignInSwift */; };
+		0D35EE292DE50F2D004F129C /* GoogleAPIClientForREST_Calendar in Frameworks */ = {isa = PBXBuildFile; productRef = 0D35EE282DE50F2D004F129C /* GoogleAPIClientForREST_Calendar */; };
+		0D35EE612DE61B46004F129C /* Messages.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D35EE602DE61B46004F129C /* Messages.framework */; };
+		0D35EE6D2DE61B48004F129C /* CalendarInviteExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0D35EE5E2DE61B46004F129C /* CalendarInviteExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0D35EE742DE61BBD004F129C /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D35EE732DE61BBD004F129C /* EventKit.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0D35EE6B2DE61B48004F129C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0D35EE012DE50B93004F129C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0D35EE5D2DE61B46004F129C;
+			remoteInfo = CalendarInviteExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0D35EE722DE61B48004F129C /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				0D35EE6D2DE61B48004F129C /* CalendarInviteExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0D35EE092DE50B93004F129C /* GcalDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GcalDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0D35EE5E2DE61B46004F129C /* CalendarInviteExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CalendarInviteExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		0D35EE602DE61B46004F129C /* Messages.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Messages.framework; path = System/Library/Frameworks/Messages.framework; sourceTree = SDKROOT; };
+		0D35EE732DE61BBD004F129C /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		0D35EE2B2DE50F65004F129C /* Exceptions for "GcalDemo" folder in "GcalDemo" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 0D35EE082DE50B93004F129C /* GcalDemo */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		0D35EE0B2DE50B93004F129C /* GcalDemo */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0D35EE2B2DE50F65004F129C /* Exceptions for "GcalDemo" folder in "GcalDemo" target */,
+			);
+			path = GcalDemo;
+			sourceTree = "<group>";
+		};
+		0D35EE622DE61B46004F129C /* CalendarInviteExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CalendarInviteExtension;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0D35EE062DE50B93004F129C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0D35EE242DE50EB1004F129C /* GoogleSignIn in Frameworks */,
+				0D35EE292DE50F2D004F129C /* GoogleAPIClientForREST_Calendar in Frameworks */,
+				0D35EE262DE50EB1004F129C /* GoogleSignInSwift in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0D35EE5B2DE61B46004F129C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0D35EE742DE61BBD004F129C /* EventKit.framework in Frameworks */,
+				0D35EE612DE61B46004F129C /* Messages.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0D35EE002DE50B93004F129C = {
+			isa = PBXGroup;
+			children = (
+				0D35EE0B2DE50B93004F129C /* GcalDemo */,
+				0D35EE622DE61B46004F129C /* CalendarInviteExtension */,
+				0D35EE5F2DE61B46004F129C /* Frameworks */,
+				0D35EE0A2DE50B93004F129C /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		0D35EE0A2DE50B93004F129C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0D35EE092DE50B93004F129C /* GcalDemo.app */,
+				0D35EE5E2DE61B46004F129C /* CalendarInviteExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0D35EE5F2DE61B46004F129C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				0D35EE732DE61BBD004F129C /* EventKit.framework */,
+				0D35EE602DE61B46004F129C /* Messages.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0D35EE082DE50B93004F129C /* GcalDemo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0D35EE172DE50B94004F129C /* Build configuration list for PBXNativeTarget "GcalDemo" */;
+			buildPhases = (
+				0D35EE052DE50B93004F129C /* Sources */,
+				0D35EE062DE50B93004F129C /* Frameworks */,
+				0D35EE072DE50B93004F129C /* Resources */,
+				0D35EE722DE61B48004F129C /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0D35EE6C2DE61B48004F129C /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				0D35EE0B2DE50B93004F129C /* GcalDemo */,
+			);
+			name = GcalDemo;
+			packageProductDependencies = (
+				0D35EE232DE50EB1004F129C /* GoogleSignIn */,
+				0D35EE252DE50EB1004F129C /* GoogleSignInSwift */,
+				0D35EE282DE50F2D004F129C /* GoogleAPIClientForREST_Calendar */,
+			);
+			productName = GcalDemo;
+			productReference = 0D35EE092DE50B93004F129C /* GcalDemo.app */;
+			productType = "com.apple.product-type.application";
+		};
+		0D35EE5D2DE61B46004F129C /* CalendarInviteExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0D35EE6E2DE61B48004F129C /* Build configuration list for PBXNativeTarget "CalendarInviteExtension" */;
+			buildPhases = (
+				0D35EE5A2DE61B46004F129C /* Sources */,
+				0D35EE5B2DE61B46004F129C /* Frameworks */,
+				0D35EE5C2DE61B46004F129C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				0D35EE622DE61B46004F129C /* CalendarInviteExtension */,
+			);
+			name = CalendarInviteExtension;
+			packageProductDependencies = (
+			);
+			productName = CalendarInviteExtension;
+			productReference = 0D35EE5E2DE61B46004F129C /* CalendarInviteExtension.appex */;
+			productType = "com.apple.product-type.app-extension.messages";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		0D35EE012DE50B93004F129C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1610;
+				LastUpgradeCheck = 1610;
+				TargetAttributes = {
+					0D35EE082DE50B93004F129C = {
+						CreatedOnToolsVersion = 16.1;
+					};
+					0D35EE5D2DE61B46004F129C = {
+						CreatedOnToolsVersion = 16.1;
+						LastSwiftMigration = 1610;
+					};
+				};
+			};
+			buildConfigurationList = 0D35EE042DE50B93004F129C /* Build configuration list for PBXProject "GcalDemo" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 0D35EE002DE50B93004F129C;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0D35EE222DE50EB1004F129C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				0D35EE272DE50F2D004F129C /* XCRemoteSwiftPackageReference "google-api-objectivec-client-for-rest" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 0D35EE0A2DE50B93004F129C /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0D35EE082DE50B93004F129C /* GcalDemo */,
+				0D35EE5D2DE61B46004F129C /* CalendarInviteExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0D35EE072DE50B93004F129C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0D35EE5C2DE61B46004F129C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0D35EE052DE50B93004F129C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0D35EE5A2DE61B46004F129C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0D35EE6C2DE61B48004F129C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0D35EE5D2DE61B46004F129C /* CalendarInviteExtension */;
+			targetProxy = 0D35EE6B2DE61B48004F129C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0D35EE152DE50B94004F129C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.1;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		0D35EE162DE50B94004F129C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.1;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		0D35EE182DE50B94004F129C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"GcalDemo/Preview Content\"";
+				DEVELOPMENT_TEAM = ZB5WA6672J;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GcalDemo/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dez.org.GcalDemo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		0D35EE192DE50B94004F129C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"GcalDemo/Preview Content\"";
+				DEVELOPMENT_TEAM = ZB5WA6672J;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GcalDemo/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dez.org.GcalDemo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		0D35EE6F2DE61B48004F129C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "iMessage App Icon";
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZB5WA6672J;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CalendarInviteExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CalendarInviteExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dez.org.GcalDemo.CalendarInviteExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "CalendarInviteExtension/CalendarInviteExtension-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		0D35EE702DE61B48004F129C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "iMessage App Icon";
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZB5WA6672J;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CalendarInviteExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CalendarInviteExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dez.org.GcalDemo.CalendarInviteExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "CalendarInviteExtension/CalendarInviteExtension-Bridging-Header.h";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0D35EE042DE50B93004F129C /* Build configuration list for PBXProject "GcalDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0D35EE152DE50B94004F129C /* Debug */,
+				0D35EE162DE50B94004F129C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0D35EE172DE50B94004F129C /* Build configuration list for PBXNativeTarget "GcalDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0D35EE182DE50B94004F129C /* Debug */,
+				0D35EE192DE50B94004F129C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0D35EE6E2DE61B48004F129C /* Build configuration list for PBXNativeTarget "CalendarInviteExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0D35EE6F2DE61B48004F129C /* Debug */,
+				0D35EE702DE61B48004F129C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0D35EE222DE50EB1004F129C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
+		0D35EE272DE50F2D004F129C /* XCRemoteSwiftPackageReference "google-api-objectivec-client-for-rest" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/google-api-objectivec-client-for-rest.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0D35EE232DE50EB1004F129C /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0D35EE222DE50EB1004F129C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		0D35EE252DE50EB1004F129C /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0D35EE222DE50EB1004F129C /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
+		};
+		0D35EE282DE50F2D004F129C /* GoogleAPIClientForREST_Calendar */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0D35EE272DE50F2D004F129C /* XCRemoteSwiftPackageReference "google-api-objectivec-client-for-rest" */;
+			productName = GoogleAPIClientForREST_Calendar;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 0D35EE012DE50B93004F129C /* Project object */;
+}
