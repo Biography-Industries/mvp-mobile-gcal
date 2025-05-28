@@ -12,20 +12,54 @@ import EventKit
 class MessagesViewController: MSMessagesAppViewController {
     
     // MARK: - Properties
-    private var eventStore = EKEventStore()
+    private var eventStore: EKEventStore?
     private var currentEvent: CalendarEvent?
     private let participantID = UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
+    private var hasInitialized = false
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        requestCalendarAccess()
+        print("MessagesViewController: Starting initialization...")
+        
+        // Initialize with error handling
+        initializeExtension()
+    }
+    
+    private func initializeExtension() {
+        do {
+            // Initialize EventKit with error handling
+            eventStore = EKEventStore()
+            print("MessagesViewController: EventStore initialized successfully")
+            
+            // Request calendar access safely
+            requestCalendarAccess()
+            
+            hasInitialized = true
+            print("MessagesViewController: Extension initialized successfully")
+            
+        } catch {
+            print("MessagesViewController: Error during initialization: \(error)")
+            // Continue without EventKit if it fails
+            hasInitialized = true
+        }
     }
     
     // MARK: - MSMessagesAppViewController Overrides
     override func willBecomeActive(with conversation: MSConversation) {
         super.willBecomeActive(with: conversation)
-        presentViewController(for: conversation, with: presentationStyle)
+        
+        guard hasInitialized else {
+            print("MessagesViewController: Extension not initialized, skipping presentation")
+            return
+        }
+        
+        do {
+            presentViewController(for: conversation, with: presentationStyle)
+        } catch {
+            print("MessagesViewController: Error presenting view controller: \(error)")
+            presentFallbackViewController()
+        }
     }
     
     override func willTransition(to presentationStyle: MSMessagesAppPresentationStyle) {
@@ -35,12 +69,20 @@ class MessagesViewController: MSMessagesAppViewController {
     
     override func didTransition(to presentationStyle: MSMessagesAppPresentationStyle) {
         super.didTransition(to: presentationStyle)
-        guard let conversation = activeConversation else { return }
-        presentViewController(for: conversation, with: presentationStyle)
+        guard let conversation = activeConversation, hasInitialized else { return }
+        
+        do {
+            presentViewController(for: conversation, with: presentationStyle)
+        } catch {
+            print("MessagesViewController: Error during transition: \(error)")
+            presentFallbackViewController()
+        }
     }
     
     override func didReceive(_ message: MSMessage, conversation: MSConversation) {
         super.didReceive(message, conversation: conversation)
+        
+        guard hasInitialized else { return }
         
         // Handle live layout updates
         if presentationStyle == .transcript {
@@ -58,30 +100,62 @@ class MessagesViewController: MSMessagesAppViewController {
         // The live layout will automatically update the UI
         DispatchQueue.main.async {
             if self.presentationStyle == .transcript {
-                self.presentViewController(for: conversation, with: self.presentationStyle)
+                do {
+                    self.presentViewController(for: conversation, with: self.presentationStyle)
+                } catch {
+                    print("MessagesViewController: Error updating live layout: \(error)")
+                }
             }
         }
     }
     
     // MARK: - Private Methods
     private func requestCalendarAccess() {
+        guard let eventStore = eventStore else { return }
+        
         eventStore.requestAccess(to: .event) { granted, error in
             DispatchQueue.main.async {
+                if let error = error {
+                    print("MessagesViewController: Calendar access error: \(error)")
+                }
                 if !granted {
-                    self.showCalendarAccessAlert()
+                    print("MessagesViewController: Calendar access not granted")
+                    // Continue without calendar access
                 }
             }
         }
     }
     
-    private func showCalendarAccessAlert() {
-        let alert = UIAlertController(
-            title: "Calendar Access Required",
-            message: "Please enable calendar access in Settings to create and share events.",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
+    private func presentFallbackViewController() {
+        // Present a simple fallback view if main initialization fails
+        let fallbackController = UIViewController()
+        fallbackController.view.backgroundColor = .systemBackground
+        
+        let label = UILabel()
+        label.text = "Calendar Invites"
+        label.font = .boldSystemFont(ofSize: 18)
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+        
+        fallbackController.view.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: fallbackController.view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: fallbackController.view.centerYAnchor)
+        ])
+        
+        addChild(fallbackController)
+        fallbackController.view.frame = view.bounds
+        fallbackController.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(fallbackController.view)
+        
+        NSLayoutConstraint.activate([
+            fallbackController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            fallbackController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            fallbackController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            fallbackController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        
+        fallbackController.didMove(toParent: self)
     }
     
     private func presentViewController(for conversation: MSConversation, with presentationStyle: MSMessagesAppPresentationStyle) {
@@ -89,27 +163,33 @@ class MessagesViewController: MSMessagesAppViewController {
         
         let controller: UIViewController
         
-        if presentationStyle == .compact {
-            controller = createCompactViewController(for: conversation)
-        } else if presentationStyle == .transcript {
-            controller = createTranscriptViewController(for: conversation)
-        } else {
-            controller = createExpandedViewController(for: conversation)
+        do {
+            if presentationStyle == .compact {
+                controller = createCompactViewController(for: conversation)
+            } else if presentationStyle == .transcript {
+                controller = createTranscriptViewController(for: conversation)
+            } else {
+                controller = createExpandedViewController(for: conversation)
+            }
+            
+            addChild(controller)
+            controller.view.frame = view.bounds
+            controller.view.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(controller.view)
+            
+            NSLayoutConstraint.activate([
+                controller.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                controller.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                controller.view.topAnchor.constraint(equalTo: view.topAnchor),
+                controller.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            ])
+            
+            controller.didMove(toParent: self)
+            
+        } catch {
+            print("MessagesViewController: Error creating view controller: \(error)")
+            presentFallbackViewController()
         }
-        
-        addChild(controller)
-        controller.view.frame = view.bounds
-        controller.view.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(controller.view)
-        
-        NSLayoutConstraint.activate([
-            controller.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            controller.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            controller.view.topAnchor.constraint(equalTo: view.topAnchor),
-            controller.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-        
-        controller.didMove(toParent: self)
     }
     
     private func createCompactViewController(for conversation: MSConversation) -> UIViewController {
@@ -139,8 +219,34 @@ class MessagesViewController: MSMessagesAppViewController {
            let event = CalendarEvent(message: selectedMessage) {
             return EventDetailViewController(event: event, delegate: self)
         } else {
+            guard let eventStore = eventStore else {
+                // Return a simple view if EventStore is not available
+                return createFallbackCreateEventViewController()
+            }
             return CreateEventViewController(eventStore: eventStore, delegate: self)
         }
+    }
+    
+    private func createFallbackCreateEventViewController() -> UIViewController {
+        let controller = UIViewController()
+        controller.view.backgroundColor = .systemBackground
+        
+        let label = UILabel()
+        label.text = "Calendar access required to create events"
+        label.font = .systemFont(ofSize: 16)
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
+        
+        controller.view.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: controller.view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: controller.view.centerYAnchor),
+            label.leadingAnchor.constraint(equalTo: controller.view.leadingAnchor, constant: 20),
+            label.trailingAnchor.constraint(equalTo: controller.view.trailingAnchor, constant: -20)
+        ])
+        
+        return controller
     }
     
     private func removeAllChildViewControllers() {
@@ -350,16 +456,16 @@ extension MessagesViewController {
     }
     
     private func addEventToCalendar(_ event: CalendarEvent) {
-        let calendarEvent = EKEvent(eventStore: eventStore)
+        let calendarEvent = EKEvent(eventStore: eventStore!)
         calendarEvent.title = event.title
         calendarEvent.startDate = event.startDate
         calendarEvent.endDate = event.endDate
         calendarEvent.location = event.location
         calendarEvent.notes = event.notes
-        calendarEvent.calendar = eventStore.defaultCalendarForNewEvents
+        calendarEvent.calendar = eventStore!.defaultCalendarForNewEvents
         
         do {
-            try eventStore.save(calendarEvent, span: .thisEvent)
+            try eventStore!.save(calendarEvent, span: .thisEvent)
         } catch {
             print("Error saving event to calendar: \(error)")
         }
