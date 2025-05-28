@@ -8,7 +8,7 @@ struct IdentifiableError: Identifiable {
 
 @MainActor
 class AppleCalendarViewModel: ObservableObject {
-    @StateObject private var eventKitManager = EventKitManager()
+    private let eventKitManager = EventKitManager()
     @Published var error: IdentifiableError?
     @Published var isInitialized = false
 
@@ -21,11 +21,17 @@ class AppleCalendarViewModel: ObservableObject {
     }
 
     var showingEventEditViewController: Binding<Bool> {
-        $eventKitManager.showingEventEditViewController
+        Binding(
+            get: { self.eventKitManager.showingEventEditViewController },
+            set: { self.eventKitManager.showingEventEditViewController = $0 }
+        )
     }
 
     var selectedEvent: Binding<EKEvent?> {
-        $eventKitManager.selectedEvent
+        Binding(
+            get: { self.eventKitManager.selectedEvent },
+            set: { self.eventKitManager.selectedEvent = $0 }
+        )
     }
 
     var eventStore: EKEventStore {
@@ -41,33 +47,25 @@ class AppleCalendarViewModel: ObservableObject {
     }
     
     private func initializeEventKit() async {
-        do {
-            print("AppleCalendarViewModel: Initializing EventKit...")
-            
-            // Check authorization status first
-            let status = eventKitManager.authorizationStatus
-            print("AppleCalendarViewModel: Current authorization status: \(status.rawValue)")
-            
-            if status == .notDetermined {
-                print("AppleCalendarViewModel: Authorization not determined, waiting for user action")
-                // Don't request access automatically - wait for user to explicitly use calendar features
-            } else if await eventKitManager.isFullAccessAuthorized() {
-                print("AppleCalendarViewModel: Full access authorized, fetching events...")
-                await eventKitManager.fetchUpcomingEvents()
-                await eventKitManager.listenForCalendarChanges()
-                print("AppleCalendarViewModel: EventKit initialization completed successfully")
-            } else {
-                print("AppleCalendarViewModel: Limited or no access to calendar")
-            }
-            
-            isInitialized = true
-            
-        } catch {
-            print("AppleCalendarViewModel: Error during initialization: \(error)")
-            let genericError = GenericLocalizedError(message: "Failed to initialize calendar: \(error.localizedDescription)")
-            self.error = IdentifiableError(error: genericError)
-            isInitialized = true // Mark as initialized even with error to prevent hanging
+        print("AppleCalendarViewModel: Initializing EventKit...")
+        
+        // Check authorization status first
+        let status = eventKitManager.authorizationStatus
+        print("AppleCalendarViewModel: Current authorization status: \(status.rawValue)")
+        
+        if status == .notDetermined {
+            print("AppleCalendarViewModel: Authorization not determined, waiting for user action")
+            // Don't request access automatically - wait for user to explicitly use calendar features
+        } else if await eventKitManager.isFullAccessAuthorized() {
+            print("AppleCalendarViewModel: Full access authorized, fetching events...")
+            await eventKitManager.fetchUpcomingEvents()
+            await eventKitManager.listenForCalendarChanges()
+            print("AppleCalendarViewModel: EventKit initialization completed successfully")
+        } else {
+            print("AppleCalendarViewModel: Limited or no access to calendar")
         }
+        
+        isInitialized = true
     }
 
     func requestCalendarAccess() {

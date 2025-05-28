@@ -42,6 +42,22 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             VStack {
+                // Add device debugging information
+                if ProcessInfo.processInfo.environment["DEBUG_LAYOUT"] != nil {
+                    VStack {
+                        Text("Debug Info")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("Device: \(UIDevice.current.name)")
+                            .font(.caption2)
+                        Text("Screen: \(UIScreen.main.bounds.size.width)x\(UIScreen.main.bounds.size.height)")
+                            .font(.caption2)
+                    }
+                    .padding(4)
+                    .background(Color.yellow.opacity(0.2))
+                    .cornerRadius(4)
+                }
+                
                 Picker("Select Calendar Service", selection: $calendarSettings.selectedService) {
                     ForEach(CalendarServiceType.allCases) { service in
                         Text(service.rawValue).tag(service)
@@ -53,13 +69,44 @@ struct ContentView: View {
                 switch calendarSettings.selectedService {
                 case .google:
                     GoogleCalendarView()
+                        .onAppear {
+                            print("📱 ContentView: Showing Google Calendar view on \(UIDevice.current.name)")
+                        }
                 case .apple:
                     AppleCalendarView()
+                        .onAppear {
+                            print("📱 ContentView: Showing Apple Calendar view on \(UIDevice.current.name)")
+                        }
                 }
             }
             .navigationTitle(navigationTitleForSelectedService())
+            .onAppear {
+                // Log safe area and layout information
+                DispatchQueue.main.async {
+                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                       let window = windowScene.windows.first {
+                        print("🔍 LAYOUT DEBUG INFO:")
+                        print("- Device: \(UIDevice.current.name)")
+                        print("- Model: \(UIDevice.current.model)")
+                        print("- Screen bounds: \(UIScreen.main.bounds)")
+                        print("- Screen scale: \(UIScreen.main.scale)")
+                        print("- Window safe area: \(window.safeAreaInsets)")
+                        print("- Window frame: \(window.frame)")
+                        
+                        // Check for potential layout issues
+                        if UIScreen.main.bounds.width > 400 {
+                            print("⚠️ Large screen detected - checking for layout constraints")
+                        }
+                        
+                        if UIScreen.main.scale > 3.0 {
+                            print("⚠️ High DPI screen detected - checking asset scaling")
+                        }
+                    }
+                }
+            }
              // Toolbar will now be part of GoogleCalendarView or AppleCalendarView
         }
+        .navigationViewStyle(StackNavigationViewStyle()) // Force stack style for consistency
     }
 
     private func navigationTitleForSelectedService() -> String {
@@ -161,7 +208,7 @@ struct ContentView: View {
     private func googleCalendarListView(user: GIDGoogleUser) -> some View {
         VStack {
             if let profile = user.profile {
-                Text("Hello, \(profile.name ?? "User")!")
+                Text("Hello, \(profile.name)!")
                     .font(.title2)
                     .padding(.top)
             }
@@ -195,8 +242,8 @@ struct ContentView: View {
                             .onTapGesture {
                                 self.googleEventToEdit = event
                                 self.googleEventTitle = event.summary ?? ""
-                                self.googleEventStartDate = event.start?.dateTime?.date ?? event.start?.date?.date ?? Date()
-                                self.googleEventEndDate = event.end?.dateTime?.date ?? event.end?.date?.date ?? (Calendar.current.date(byAdding: .hour, value: 1, to: self.googleEventStartDate) ?? Date())
+                                self.googleEventStartDate = safeGetEventDate(from: event.start) ?? Date()
+                                self.googleEventEndDate = safeGetEventDate(from: event.end) ?? (Calendar.current.date(byAdding: .hour, value: 1, to: self.googleEventStartDate) ?? Date())
                                 self.showingEditGoogleEventSheet = true
                             }
                     }
@@ -213,11 +260,11 @@ struct ContentView: View {
         VStack(alignment: .leading) {
             Text(event.summary ?? "No Title")
                 .font(.headline)
-            if let start = event.start?.dateTime?.date ?? event.start?.date?.date {
+            if let start = safeGetEventDate(from: event.start) {
                  Text("Start: \(formatDate(start))")
                     .font(.subheadline)
             }
-            if let end = event.end?.dateTime?.date ?? event.end?.date?.date {
+            if let end = safeGetEventDate(from: event.end) {
                  Text("End: \(formatDate(end))")
                     .font(.subheadline)
             }
@@ -232,14 +279,32 @@ struct ContentView: View {
 
     private func deleteGoogleEventItems(offsets: IndexSet) {
         withAnimation {
-            offsets.map { calendarViewModel.events[$0] }.forEach { event in
+            for offset in offsets {
+                let event = calendarViewModel.events[offset]
                 if let eventId = event.identifier {
-                    calendarViewModel.deleteEvent(eventId: eventId, forUser: authViewModel.googleUser) { success in
-                        // ViewModel updates UI
+                    Task {
+                        let _ = await calendarViewModel.deleteEvent(eventId: eventId, forUser: authViewModel.googleUser)
                     }
                 }
             }
         }
+    }
+
+    // MARK: - Safe Date Extraction Helper
+    private func safeGetEventDate(from eventDateTime: GTLRCalendar_EventDateTime?) -> Date? {
+        guard let eventDateTime = eventDateTime else { return nil }
+        
+        // Try dateTime first (for timed events)
+        if let dateTime = eventDateTime.dateTime {
+            return dateTime.date
+        }
+        
+        // Fall back to date (for all-day events)
+        if let date = eventDateTime.date {
+            return date.date
+        }
+        
+        return nil
     }
 
     // MARK: - Unified Google Event Form View (for Add and Edit)
@@ -272,7 +337,8 @@ struct ContentView: View {
                     eventData.end?.dateTime = endGTLRDateTime
 
                     if mode == .add {
-                        calendarViewModel.addEvent(title: googleEventTitle, startTime: googleEventStartDate, endTime: googleEventEndDate, forUser: user) { success in
+                        Task {
+                            let success = await calendarViewModel.addEvent(title: googleEventTitle, startTime: googleEventStartDate, endTime: googleEventEndDate, forUser: user)
                             if success {
                                 showingAddGoogleEventSheet = false
                                 resetGoogleEventFormFields()
@@ -280,7 +346,8 @@ struct ContentView: View {
                             }
                         }
                     } else if mode == .edit, let originalEventID = event?.identifier {
-                        calendarViewModel.updateEvent(originalEventID: originalEventID, updatedEventData: eventData, forUser: user) { success in
+                        Task {
+                            let success = await calendarViewModel.updateEvent(originalEventID: originalEventID, updatedEventData: eventData, forUser: user)
                             if success {
                                 showingEditGoogleEventSheet = false
                                 googleEventToEdit = nil
@@ -309,8 +376,8 @@ struct ContentView: View {
             .onAppear { // Pre-fill form for editing
                 if mode == .edit, let eventToEdit = event {
                     googleEventTitle = eventToEdit.summary ?? ""
-                    googleEventStartDate = eventToEdit.start?.dateTime?.date ?? eventToEdit.start?.date?.date ?? Date()
-                    googleEventEndDate = eventToEdit.end?.dateTime?.date ?? eventToEdit.end?.date?.date ?? (Calendar.current.date(byAdding: .hour, value: 1, to: googleEventStartDate) ?? Date())
+                    googleEventStartDate = safeGetEventDate(from: eventToEdit.start) ?? Date()
+                    googleEventEndDate = safeGetEventDate(from: eventToEdit.end) ?? (Calendar.current.date(byAdding: .hour, value: 1, to: googleEventStartDate) ?? Date())
                 } else {
                      resetGoogleEventFormFields() // Ensure form is clear for add mode
                 }
@@ -410,7 +477,9 @@ struct ContentView: View {
                         
                         Spacer()
                     }
-                case .authorized, .fullAccess: // .fullAccess is for iOS 17+
+                case .authorized:
+                    appleCalendarListView()
+                case .fullAccess:
                     appleCalendarListView()
                 @unknown default:
                     VStack {
@@ -437,7 +506,7 @@ struct ContentView: View {
         .toolbar {
              if calendarSettings.selectedService == .apple && 
                 appleCalendarViewModel.isInitialized &&
-                (appleCalendarViewModel.authorizationStatus == .authorized || appleCalendarViewModel.authorizationStatus == .fullAccess) {
+                isAppleCalendarAuthorized() {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         resetAppleEventFormFields()
@@ -464,10 +533,19 @@ struct ContentView: View {
             if calendarSettings.selectedService == .apple && appleCalendarViewModel.isInitialized {
                 if appleCalendarViewModel.authorizationStatus == .notDetermined {
                     // Don't automatically request access - let user decide
-                } else if appleCalendarViewModel.authorizationStatus == .authorized || appleCalendarViewModel.authorizationStatus == .fullAccess {
+                } else if isAppleCalendarAuthorized() {
                     appleCalendarViewModel.refreshEvents()
                 }
             }
+        }
+    }
+    
+    // Helper function to check Apple Calendar authorization
+    private func isAppleCalendarAuthorized() -> Bool {
+        if #available(iOS 17.0, *) {
+            return appleCalendarViewModel.authorizationStatus == .fullAccess
+        } else {
+            return appleCalendarViewModel.authorizationStatus == .authorized
         }
     }
 
