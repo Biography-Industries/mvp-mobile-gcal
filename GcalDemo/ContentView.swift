@@ -335,35 +335,109 @@ struct ContentView: View {
     @ViewBuilder
     private func AppleCalendarView() -> some View {
         VStack {
-            switch appleCalendarViewModel.authorizationStatus {
-            case .notDetermined:
-                Button("Request Calendar Access") {
-                    appleCalendarViewModel.requestCalendarAccess()
+            // Add safety check for initialization
+            if !appleCalendarViewModel.isInitialized {
+                VStack {
+                    ProgressView("Initializing Calendar...")
+                        .padding()
+                    Text("Setting up calendar access...")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
-                Spacer()
-            case .restricted:
-                Text("Calendar access is restricted on this device.")
-                    .padding()
-                Spacer()
-            case .denied:
-                Text("Calendar access was denied. Please enable it in Settings.")
-                    .padding()
-                Button("Open Settings") {
-                    guard let settingsUrl = URL(string: UIApplication.openSettingsURLString) else { return }
-                    if UIApplication.shared.canOpenURL(settingsUrl) {
-                        UIApplication.shared.open(settingsUrl)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                switch appleCalendarViewModel.authorizationStatus {
+                case .notDetermined:
+                    VStack {
+                        Text("Calendar Access Required")
+                            .font(.headline)
+                            .padding()
+                        
+                        Text("This app needs access to your calendar to display and manage events.")
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                        
+                        Button("Request Calendar Access") {
+                            appleCalendarViewModel.requestCalendarAccess()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .padding()
+                        
+                        Spacer()
+                    }
+                case .restricted:
+                    VStack {
+                        Image(systemName: "calendar.badge.exclamationmark")
+                            .font(.largeTitle)
+                            .foregroundColor(.orange)
+                            .padding()
+                        
+                        Text("Calendar access is restricted on this device.")
+                            .multilineTextAlignment(.center)
+                            .padding()
+                        
+                        Text("This may be due to parental controls or device management policies.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                        
+                        Spacer()
+                    }
+                case .denied:
+                    VStack {
+                        Image(systemName: "calendar.badge.minus")
+                            .font(.largeTitle)
+                            .foregroundColor(.red)
+                            .padding()
+                        
+                        Text("Calendar access was denied.")
+                            .font(.headline)
+                            .padding()
+                        
+                        Text("Please enable calendar access in Settings to use this feature.")
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                        
+                        Button("Open Settings") {
+                            guard let settingsUrl = URL(string: UIApplication.openSettingsURLString) else { return }
+                            if UIApplication.shared.canOpenURL(settingsUrl) {
+                                UIApplication.shared.open(settingsUrl)
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .padding()
+                        
+                        Spacer()
+                    }
+                case .authorized, .fullAccess: // .fullAccess is for iOS 17+
+                    appleCalendarListView()
+                @unknown default:
+                    VStack {
+                        Image(systemName: "questionmark.circle")
+                            .font(.largeTitle)
+                            .foregroundColor(.gray)
+                            .padding()
+                        
+                        Text("Unknown calendar authorization status.")
+                            .multilineTextAlignment(.center)
+                            .padding()
+                        
+                        Button("Retry") {
+                            appleCalendarViewModel.requestCalendarAccess()
+                        }
+                        .buttonStyle(.bordered)
+                        .padding()
+                        
+                        Spacer()
                     }
                 }
-                Spacer()
-            case .authorized, .fullAccess: // .fullAccess is for iOS 17+
-                appleCalendarListView()
-            @unknown default:
-                Text("Unknown calendar authorization status.")
-                Spacer()
             }
         }
         .toolbar {
-             if calendarSettings.selectedService == .apple && (appleCalendarViewModel.authorizationStatus == .authorized || appleCalendarViewModel.authorizationStatus == .fullAccess) {
+             if calendarSettings.selectedService == .apple && 
+                appleCalendarViewModel.isInitialized &&
+                (appleCalendarViewModel.authorizationStatus == .authorized || appleCalendarViewModel.authorizationStatus == .fullAccess) {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         resetAppleEventFormFields()
@@ -386,10 +460,10 @@ struct ContentView: View {
             Alert(title: Text("Error"), message: Text(identifiableError.error.localizedDescription), dismissButton: .default(Text("OK")))
         }
         .onAppear {
-            if calendarSettings.selectedService == .apple {
-                // Initial check or refresh for Apple Calendar
+            // Add safety check before accessing calendar
+            if calendarSettings.selectedService == .apple && appleCalendarViewModel.isInitialized {
                 if appleCalendarViewModel.authorizationStatus == .notDetermined {
-                    // Prompt for access or guide user. For now, it's handled by the button.
+                    // Don't automatically request access - let user decide
                 } else if appleCalendarViewModel.authorizationStatus == .authorized || appleCalendarViewModel.authorizationStatus == .fullAccess {
                     appleCalendarViewModel.refreshEvents()
                 }

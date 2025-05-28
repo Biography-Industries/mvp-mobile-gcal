@@ -41,6 +41,11 @@ struct GcalDemoApp: App {
                 if let error = initializationError {
                     // Show error view if initialization failed
                     VStack {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.largeTitle)
+                            .foregroundColor(.red)
+                            .padding()
+                        
                         Text("Initialization Error")
                             .font(.title)
                             .foregroundColor(.red)
@@ -64,15 +69,47 @@ struct GcalDemoApp: App {
                     .padding()
                 } else if hasInitialized && viewModelsReady {
                     // Show main content once everything is initialized
-                    ContentView()
-                        .environmentObject(authViewModel!)
-                        .environmentObject(calendarViewModel!)
-                        .environmentObject(appleCalendarViewModel!)
-                        .environmentObject(calendarSettings!)
-                        .onOpenURL { url in
-                            // Let the GoogleSignInManager handle the URL
-                            _ = GoogleSignInManager.shared.handle(url)
+                    Group {
+                        if let authViewModel = authViewModel,
+                           let calendarViewModel = calendarViewModel,
+                           let appleCalendarViewModel = appleCalendarViewModel,
+                           let calendarSettings = calendarSettings {
+                            ContentView()
+                                .environmentObject(authViewModel)
+                                .environmentObject(calendarViewModel)
+                                .environmentObject(appleCalendarViewModel)
+                                .environmentObject(calendarSettings)
+                                .onOpenURL { url in
+                                    // Let the GoogleSignInManager handle the URL
+                                    _ = GoogleSignInManager.shared.handle(url)
+                                }
+                        } else {
+                            // Fallback if ViewModels are nil
+                            VStack {
+                                Image(systemName: "exclamationmark.circle")
+                                    .font(.largeTitle)
+                                    .foregroundColor(.orange)
+                                    .padding()
+                                
+                                Text("App Components Not Ready")
+                                    .font(.headline)
+                                    .padding()
+                                
+                                Text("Some app components failed to initialize properly.")
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal)
+                                
+                                Button("Restart App") {
+                                    retryInitialization()
+                                }
+                                .padding()
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(8)
+                            }
+                            .padding()
                         }
+                    }
                 } else {
                     // Show loading view during initialization
                     VStack {
@@ -83,6 +120,16 @@ struct GcalDemoApp: App {
                         Text(viewModelsReady ? "Finalizing..." : "Initializing GcalDemo...")
                             .font(.headline)
                             .padding()
+                        
+                        if !hasInitialized {
+                            Text("Setting up app components...")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        } else if !viewModelsReady {
+                            Text("Preparing calendar services...")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                     }
                     .onAppear {
                         if !hasInitialized {
@@ -90,6 +137,10 @@ struct GcalDemoApp: App {
                         }
                     }
                 }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                // Handle app becoming active - useful for debugging
+                print("GcalDemoApp: App became active")
             }
         }
     }
@@ -124,18 +175,28 @@ struct GcalDemoApp: App {
             do {
                 print("GcalDemoApp: Creating AuthViewModel...")
                 authViewModel = AuthViewModel()
+                print("GcalDemoApp: AuthViewModel created successfully")
                 
                 print("GcalDemoApp: Creating CalendarViewModel...")
                 calendarViewModel = CalendarViewModel()
+                print("GcalDemoApp: CalendarViewModel created successfully")
                 
                 print("GcalDemoApp: Creating CalendarSettings...")
                 calendarSettings = CalendarSettings()
+                print("GcalDemoApp: CalendarSettings created successfully")
                 
                 print("GcalDemoApp: Creating AppleCalendarViewModel...")
                 appleCalendarViewModel = AppleCalendarViewModel()
+                print("GcalDemoApp: AppleCalendarViewModel created successfully")
                 
-                viewModelsReady = true
-                print("GcalDemoApp: All ViewModels created successfully")
+                // Add a small delay to ensure all ViewModels are fully initialized
+                Task {
+                    try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+                    await MainActor.run {
+                        viewModelsReady = true
+                        print("GcalDemoApp: All ViewModels created and ready")
+                    }
+                }
                 
             } catch {
                 print("GcalDemoApp: Error creating ViewModels: \(error)")
