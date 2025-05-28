@@ -10,14 +10,15 @@ import GoogleSignIn // Ensure this is imported
 
 @main
 struct GcalDemoApp: App {
-    // Add @StateObject with error handling
-    @StateObject private var authViewModel = AuthViewModel()
-    @StateObject private var calendarViewModel = CalendarViewModel()
-    @StateObject private var appleCalendarViewModel = AppleCalendarViewModel()
-    @StateObject private var calendarSettings = CalendarSettings()
-    
     @State private var hasInitialized = false
     @State private var initializationError: String?
+    @State private var viewModelsReady = false
+    
+    // Lazy initialization of ViewModels to prevent crashes during startup
+    @State private var authViewModel: AuthViewModel?
+    @State private var calendarViewModel: CalendarViewModel?
+    @State private var appleCalendarViewModel: AppleCalendarViewModel?
+    @State private var calendarSettings: CalendarSettings?
 
     init() {
         print("GcalDemoApp: Starting app initialization...")
@@ -52,6 +53,8 @@ struct GcalDemoApp: App {
                         Button("Retry") {
                             initializationError = nil
                             hasInitialized = false
+                            viewModelsReady = false
+                            retryInitialization()
                         }
                         .padding()
                         .background(Color.blue)
@@ -59,13 +62,13 @@ struct GcalDemoApp: App {
                         .cornerRadius(8)
                     }
                     .padding()
-                } else if hasInitialized {
-                    // Show main content once initialized
+                } else if hasInitialized && viewModelsReady {
+                    // Show main content once everything is initialized
                     ContentView()
-                        .environmentObject(authViewModel)
-                        .environmentObject(calendarViewModel)
-                        .environmentObject(appleCalendarViewModel)
-                        .environmentObject(calendarSettings)
+                        .environmentObject(authViewModel!)
+                        .environmentObject(calendarViewModel!)
+                        .environmentObject(appleCalendarViewModel!)
+                        .environmentObject(calendarSettings!)
                         .onOpenURL { url in
                             // Let the GoogleSignInManager handle the URL
                             _ = GoogleSignInManager.shared.handle(url)
@@ -77,12 +80,14 @@ struct GcalDemoApp: App {
                             .scaleEffect(1.5)
                             .padding()
                         
-                        Text("Initializing GcalDemo...")
+                        Text(viewModelsReady ? "Finalizing..." : "Initializing GcalDemo...")
                             .font(.headline)
                             .padding()
                     }
                     .onAppear {
-                        initializeApp()
+                        if !hasInitialized {
+                            initializeApp()
+                        }
                     }
                 }
             }
@@ -90,19 +95,63 @@ struct GcalDemoApp: App {
     }
     
     private func initializeApp() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        Task {
             do {
-                // Perform any additional initialization here
-                print("GcalDemoApp: Completing app initialization...")
+                print("GcalDemoApp: Starting ViewModel initialization...")
                 
-                // Mark as initialized
-                hasInitialized = true
-                print("GcalDemoApp: App fully initialized and ready")
+                // Initialize ViewModels with error handling
+                await initializeViewModels()
+                
+                // Small delay to ensure everything is ready
+                try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                
+                await MainActor.run {
+                    hasInitialized = true
+                    print("GcalDemoApp: App fully initialized and ready")
+                }
                 
             } catch {
                 print("GcalDemoApp: Initialization error: \(error)")
-                initializationError = "Failed to initialize app: \(error.localizedDescription)"
+                await MainActor.run {
+                    initializationError = "Failed to initialize app: \(error.localizedDescription)"
+                }
             }
         }
+    }
+    
+    private func initializeViewModels() async {
+        await MainActor.run {
+            do {
+                print("GcalDemoApp: Creating AuthViewModel...")
+                authViewModel = AuthViewModel()
+                
+                print("GcalDemoApp: Creating CalendarViewModel...")
+                calendarViewModel = CalendarViewModel()
+                
+                print("GcalDemoApp: Creating CalendarSettings...")
+                calendarSettings = CalendarSettings()
+                
+                print("GcalDemoApp: Creating AppleCalendarViewModel...")
+                appleCalendarViewModel = AppleCalendarViewModel()
+                
+                viewModelsReady = true
+                print("GcalDemoApp: All ViewModels created successfully")
+                
+            } catch {
+                print("GcalDemoApp: Error creating ViewModels: \(error)")
+                initializationError = "Failed to create app components: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    private func retryInitialization() {
+        // Reset ViewModels
+        authViewModel = nil
+        calendarViewModel = nil
+        appleCalendarViewModel = nil
+        calendarSettings = nil
+        
+        // Retry initialization
+        initializeApp()
     }
 }
