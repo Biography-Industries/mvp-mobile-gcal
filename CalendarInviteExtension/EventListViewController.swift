@@ -2,7 +2,7 @@
 //  EventListViewController.swift
 //  CalendarInviteExtension
 //
-//  Created by Calendar Invite Extension
+//  Created by Dezmond Blair
 //
 
 import UIKit
@@ -18,6 +18,7 @@ class EventListViewController: UIViewController {
     // MARK: - UI Elements
     private let tableView = UITableView()
     private let createEventButton = UIButton(type: .system)
+    private let createScheduleSelectionButton = UIButton(type: .system)
     private let emptyStateLabel = UILabel()
     
     // MARK: - Initialization
@@ -49,6 +50,14 @@ class EventListViewController: UIViewController {
         createEventButton.layer.cornerRadius = 8
         createEventButton.addTarget(self, action: #selector(createEventButtonTapped), for: .touchUpInside)
         
+        // Configure create schedule selection button
+        createScheduleSelectionButton.setTitle("⏰ Coordinate Schedule", for: .normal)
+        createScheduleSelectionButton.titleLabel?.font = .boldSystemFont(ofSize: 16)
+        createScheduleSelectionButton.backgroundColor = .systemGreen
+        createScheduleSelectionButton.setTitleColor(.white, for: .normal)
+        createScheduleSelectionButton.layer.cornerRadius = 8
+        createScheduleSelectionButton.addTarget(self, action: #selector(createScheduleSelectionButtonTapped), for: .touchUpInside)
+        
         // Configure table view
         tableView.delegate = self
         tableView.dataSource = self
@@ -57,7 +66,7 @@ class EventListViewController: UIViewController {
         tableView.backgroundColor = .systemBackground
         
         // Configure empty state label
-        emptyStateLabel.text = "No recent events\nTap 'Create New Event' to get started"
+        emptyStateLabel.text = "No recent events\nChoose an option above to get started"
         emptyStateLabel.textAlignment = .center
         emptyStateLabel.numberOfLines = 0
         emptyStateLabel.textColor = .secondaryLabel
@@ -65,7 +74,7 @@ class EventListViewController: UIViewController {
         emptyStateLabel.isHidden = true
         
         // Add subviews
-        [createEventButton, tableView, emptyStateLabel].forEach {
+        [createEventButton, createScheduleSelectionButton, tableView, emptyStateLabel].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview($0)
         }
@@ -81,8 +90,14 @@ class EventListViewController: UIViewController {
             createEventButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             createEventButton.heightAnchor.constraint(equalToConstant: 44),
             
+            // Create schedule selection button
+            createScheduleSelectionButton.topAnchor.constraint(equalTo: createEventButton.bottomAnchor, constant: 12),
+            createScheduleSelectionButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            createScheduleSelectionButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            createScheduleSelectionButton.heightAnchor.constraint(equalToConstant: 44),
+            
             // Table view
-            tableView.topAnchor.constraint(equalTo: createEventButton.bottomAnchor, constant: 16),
+            tableView.topAnchor.constraint(equalTo: createScheduleSelectionButton.bottomAnchor, constant: 16),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -132,6 +147,10 @@ class EventListViewController: UIViewController {
     // MARK: - Actions
     @objc private func createEventButtonTapped() {
         delegate?.eventListViewController(self, didSelectCreateEvent: ())
+    }
+    
+    @objc private func createScheduleSelectionButtonTapped() {
+        delegate?.eventListViewController(self, didSelectCreateScheduleSelection: ())
     }
 }
 

@@ -1,6 +1,27 @@
 # Calendar Invite iMessage Extension
 
-This iMessage extension allows users to send calendar event invitations directly through Messages and receive responses from friends.
+This iMessage extension allows users to send calendar event invitations directly through Messages and receive responses from friends. The extension supports two types of interactive widgets with different presentation modes optimized for their specific use cases.
+
+## Features
+
+### 📅 RSVP Event Widget (Live Layout)
+- Quick "Going" or "Can't go" responses directly in message bubbles
+- Real-time response tracking and display
+- Automatic calendar integration when accepting invites
+- Uses **MSMessageLiveLayout** for immediate interaction without opening the extension
+
+### ⏰ Schedule Coordination Widget (Deferred Presentation)
+- Coordinate availability when event time is uncertain
+- Multiple time slot selection with conflict detection
+- Custom availability proposal (When2Meet-style interface)
+- Uses **deferred presentation** (tap to expand) to avoid scrolling conflicts
+- Full sheet interaction for better user experience with complex interfaces
+
+### 🔄 Smart Presentation Mode Selection
+- **Live Layout**: Used for simple RSVP interactions that work well in message bubbles
+- **Deferred Presentation**: Used for complex scheduling interfaces that need full screen interaction
+- Automatic conflict resolution between iMessage chat scroll and widget scroll
+- Both widgets work independently within the same app target
 
 ## Features
 
@@ -60,128 +81,170 @@ CalendarInviteExtension/
 
 ## How It Works
 
-### Message Flow
+### RSVP Widget Flow (Live Layout)
 
-1. **Sender Creates Event**:
-   - Opens Messages app
-   - Taps the app drawer and selects Calendar Invites
-   - Creates new event or selects existing one
-   - Sends invitation as interactive message
+1. **Sender Creates RSVP Event**:
+   - Opens Messages app and selects Calendar Invites extension
+   - Creates event with specific time/date
+   - Sends invitation as **live interactive message**
 
-2. **Recipient Receives Invitation**:
-   - Sees rich message bubble with event details
-   - Can tap to expand and see full details
-   - Responds with "Going" or "Can't go"
+2. **Recipient Sees RSVP Widget**:
+   - Event details appear directly in message bubble
+   - "Going" and "Can't go" buttons are immediately visible
+   - Can respond without opening the extension
 
 3. **Response Handling**:
-   - Response updates the message for all participants
-   - Sender sees updated response count
+   - Responses update the message for all participants in real-time
+   - Uses `MSMessageLiveLayout` for seamless interaction
    - Accepted events can be automatically added to recipient's calendar
 
-### Data Sharing
+### Scheduling Widget Flow (Deferred Presentation)
 
-Events are shared securely using `MSMessage` URL components:
-- Event data is encoded in URL query parameters
-- No external servers required
-- Responses are tracked per participant using device identifiers
+1. **Sender Creates Scheduling Event**:
+   - Opens extension and chooses "Coordinate Schedule"
+   - Sets preferences (time range, preferred days, duration)
+   - System generates 3-5 conflict-free time suggestions
+   - Sends as **template layout message** (not live)
 
-## User Interface
+2. **Recipient Sees Scheduling Summary**:
+   - Compact view shows event title, organizer, and option count
+   - Clear "Tap to choose your availability" instruction
+   - **No scrolling conflicts** with iMessage chat
 
-### Compact Mode (Default)
-- **Event List**: Shows recent calendar events with "Create New Event" button
-- **Response View**: Quick accept/decline buttons with event summary
+3. **Full Interaction Experience**:
+   - Tapping opens full extension in expanded mode
+   - Complete scheduling interface with proper scrolling
+   - Multiple selection options:
+     - Select from suggested time slots
+     - Indicate "none of these work"
+     - Propose custom availability with When2Meet-style grid
 
-### Expanded Mode (Tap to expand)
-- **Create Event**: Full form with title, dates, location, and notes
-- **Event Detail**: Complete event information with response tracking
+4. **Response Options**:
+   - **Quick Selection**: Choose from suggested time slots
+   - **None Work**: Indicate scheduling conflicts
+   - **Custom Availability**: Open When2Meet-style interface for custom time proposal
 
 ## Technical Implementation
 
-### Key Components
+### Message Type Detection
 
-1. **CalendarEvent Model**:
-   - Represents event data with responses
-   - Handles URL encoding/decoding for message sharing
-   - Supports EventKit integration
+```swift
+// RSVP events use live layout
+private func composeMessage(with event: CalendarEvent, caption: String, session: MSSession? = nil) -> MSMessage {
+    let liveLayout = MSMessageLiveLayout(alternateLayout: alternateLayout)
+    // ... configure live interactive message
+}
 
-2. **MessagesViewController**:
-   - Main controller managing presentation styles
-   - Handles message composition and response processing
-   - Integrates with EventKit for calendar access
+// Scheduling events use deferred presentation
+private func composeScheduleSelectionMessage(with event: ScheduleSelectionEvent, caption: String, session: MSSession? = nil) -> MSMessage {
+    let templateLayout = MSMessageTemplateLayout()
+    templateLayout.imageTitle = "Tap to coordinate schedule"
+    // ... configure tap-to-expand message
+}
+```
 
-3. **Response System**:
-   - Tracks responses per participant using device identifiers
-   - Updates message content with response status
-   - Provides real-time feedback to all participants
+### Presentation Mode Routing
 
-### EventKit Integration
+```swift
+private func createTranscriptViewController(for conversation: MSConversation) -> UIViewController {
+    if let event = CalendarEvent(message: selectedMessage) {
+        // RSVP: Show live interactive view
+        return LiveEventResponseViewController(event: event, participantID: participantID, delegate: self)
+    } else if let scheduleEvent = ScheduleSelectionEvent(message: selectedMessage) {
+        // Scheduling: Show tap-to-expand summary
+        return ScheduleSelectionTapToExpandViewController(scheduleEvent: scheduleEvent)
+    }
+}
 
-- Reads existing calendar events for sharing
-- Adds accepted events to user's calendar
-- Respects user's calendar permissions and preferences
+private func createExpandedViewController(for conversation: MSConversation) -> UIViewController {
+    if let scheduleEvent = ScheduleSelectionEvent(message: selectedMessage) {
+        // Scheduling: Show full interactive interface
+        return ScheduleSelectionViewController(scheduleEvent: scheduleEvent, delegate: self)
+    }
+    // ... other cases
+}
+```
 
-## Best Practices
+## Widget Presentation Modes
 
-### Security
-- No personal data is stored externally
-- Device identifiers are used for response tracking
-- Calendar access requires explicit user permission
+| Widget Type | Transcript Mode | Compact Mode | Expanded Mode |
+|-------------|----------------|--------------|---------------|
+| **RSVP** | Live interactive buttons | Quick response interface | Full event details |
+| **Scheduling** | Tap-to-expand summary | Event list | Full scheduling interface |
 
-### User Experience
-- Clean, intuitive interface following iOS design guidelines
-- Responsive design for different screen sizes
-- Clear visual feedback for all interactions
+## User Experience Benefits
 
-### Performance
-- Efficient message encoding/decoding
-- Minimal memory footprint
-- Fast response to user interactions
+### RSVP Widget Advantages
+- **Zero friction**: Respond without leaving Messages
+- **Immediate feedback**: See response reflected instantly
+- **Context preservation**: No app switching required
+- **Real-time updates**: See others' responses as they come in
 
-## Customization Options
+### Scheduling Widget Advantages
+- **No scroll conflicts**: Eliminates iMessage chat scroll interference
+- **Better interaction**: Full screen space for complex time selection
+- **Visual clarity**: Proper layout for When2Meet-style grid
+- **Progressive disclosure**: Simple summary → full interface when needed
 
-### Styling
-- Modify colors and fonts in view controllers
-- Customize message bubble appearance
-- Add custom icons or branding
+## Setup Instructions
 
-### Features
-- Add recurring event support
-- Implement reminder notifications
-- Add Google Calendar integration
-- Support for multiple calendar accounts
+The extension supports both widget types automatically. No additional configuration is needed beyond the standard iMessage extension setup.
+
+### Required Permissions
+- **Calendar Access**: For conflict detection and event creation
+- **Messages Framework**: For iMessage extension functionality
+
+## File Structure
+
+```
+CalendarInviteExtension/
+├── MessagesViewController.swift              # Main controller with widget routing
+├── CalendarEvent.swift                       # RSVP event data model
+├── ScheduleSelectionEvent.swift             # Scheduling event data model
+├── LiveEventResponseViewController.swift     # RSVP live layout view
+├── ScheduleSelectionTapToExpandViewController.swift  # Scheduling summary view
+├── ScheduleSelectionViewController.swift     # Full scheduling interface
+├── CustomAvailabilityViewController.swift   # When2Meet-style grid
+└── README.md
+```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Calendar Permission Denied**:
-   - Guide users to Settings > Privacy & Security > Calendars
-   - Enable access for your app
+1. **Scheduling Widget Not Expanding**:
+   - Ensure the message uses `MSMessageTemplateLayout` (not live layout)
+   - Check that tapping triggers expanded presentation mode
 
-2. **Extension Not Appearing**:
-   - Ensure extension target is properly configured
-   - Check bundle identifier matches main app
-   - Verify Info.plist settings
+2. **RSVP Buttons Not Responding**:
+   - Verify `MSMessageLiveLayout` is properly configured
+   - Check live layout delegate methods are implemented
 
-3. **Messages Not Sending**:
-   - Check network connectivity
-   - Verify message composition logic
-   - Test with different conversation types
+3. **Scroll Conflicts** (Legacy Issue - Now Resolved):
+   - Old issue where scheduling widget used live layout
+   - Resolved by moving scheduling to deferred presentation
 
-### Debug Tips
+## Best Practices
 
-- Use Xcode debugger with extension target
-- Check console logs for error messages
-- Test on physical device (extensions may not work properly in simulator)
+### When to Use Live Layout
+- Simple, single-action responses (Yes/No, Accept/Decline)
+- Interactions that benefit from immediate visibility
+- Actions that don't require complex input
+
+### When to Use Deferred Presentation
+- Complex interfaces with multiple selection options
+- Views that require significant scrolling
+- Multi-step workflows or detailed input forms
 
 ## Future Enhancements
 
-- [ ] Google Calendar integration
-- [ ] Recurring event support
-- [ ] Custom reminder settings
-- [ ] Event modification capabilities
-- [ ] Group event management
-- [ ] Calendar sync across devices
+- [ ] Rich scheduling preferences (timezone support, recurring events)
+- [ ] Advanced conflict detection with multiple calendar sources
+- [ ] Integration with Google Calendar and other services
+- [ ] Participant avatars and response visualization
+- [ ] Smart time suggestion based on historical preferences
+
+This dual-widget approach provides the best of both worlds: immediate interaction for simple responses and full-featured interfaces for complex coordination, all while avoiding UI conflicts and maintaining excellent user experience.
 
 ## Support
 
