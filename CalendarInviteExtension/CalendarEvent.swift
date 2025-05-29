@@ -2,7 +2,7 @@
 //  CalendarEvent.swift
 //  CalendarInviteExtension
 //
-//  Created by Calendar Invite Extension
+//  Created by Dezmond Blair
 //
 
 import Foundation

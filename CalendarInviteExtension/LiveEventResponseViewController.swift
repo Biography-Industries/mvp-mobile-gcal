@@ -2,7 +2,7 @@
 //  LiveEventResponseViewController.swift
 //  CalendarInviteExtension
 //
-//  Created by Calendar Invite Extension
+//  Created by Dezmond Blair
 //
 
 import UIKit

@@ -2,7 +2,7 @@
 //  EventResponseViewController.swift
 //  CalendarInviteExtension
 //
-//  Created by Calendar Invite Extension
+//  Created by Dezmond Blair
 //
 
 import UIKit
@@ -213,3 +213,4 @@ class EventResponseViewController: UIViewController {
         delegate?.eventResponseViewController(self, didRespondToEvent: event, with: .declined)
     }
 } 
+

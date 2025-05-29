@@ -2,7 +2,7 @@
 //  MessagesViewController.swift
 //  CalendarInviteExtension
 //
-//  Created by Calendar Invite Extension
+//  Created by Dezmond Blair
 //
 
 import UIKit
@@ -14,6 +14,7 @@ class MessagesViewController: MSMessagesAppViewController {
     // MARK: - Properties
     private var eventStore: EKEventStore?
     private var currentEvent: CalendarEvent?
+    private var currentScheduleEvent: ScheduleSelectionEvent?
     private let participantID = UIDevice.current.identifierForVendor?.uuidString ?? UUID().uuidString
     private var hasInitialized = false
     
@@ -84,20 +85,21 @@ class MessagesViewController: MSMessagesAppViewController {
         
         guard hasInitialized else { return }
         
-        // Handle live layout updates
-        if presentationStyle == .transcript {
-            if let event = CalendarEvent(message: message) {
-                currentEvent = event
-                // Update the live layout view if needed
+        // Handle message updates for both RSVP and scheduling
+        if let event = CalendarEvent(message: message) {
+            currentEvent = event
+            if presentationStyle == .transcript {
                 updateLiveLayoutIfNeeded(for: conversation, with: event)
             }
+        } else if let scheduleEvent = ScheduleSelectionEvent(message: message) {
+            currentScheduleEvent = scheduleEvent
+            // Scheduling events use deferred presentation, so no live layout updates needed
         }
     }
     
-    // MARK: - Live Layout Support
+    // MARK: - Live Layout Support (RSVP Only)
     private func updateLiveLayoutIfNeeded(for conversation: MSConversation, with event: CalendarEvent) {
-        // This method handles live updates when messages are received
-        // The live layout will automatically update the UI
+        // This method handles live updates for RSVP events only
         DispatchQueue.main.async {
             if self.presentationStyle == .transcript {
                 do {
@@ -197,16 +199,23 @@ class MessagesViewController: MSMessagesAppViewController {
         if let selectedMessage = conversation.selectedMessage,
            let event = CalendarEvent(message: selectedMessage) {
             return EventResponseViewController(event: event, delegate: self)
+        } else if let selectedMessage = conversation.selectedMessage,
+                  let scheduleEvent = ScheduleSelectionEvent(message: selectedMessage) {
+            return ScheduleSelectionViewController(scheduleEvent: scheduleEvent, delegate: self)
         } else {
             return EventListViewController(delegate: self)
         }
     }
     
     private func createTranscriptViewController(for conversation: MSConversation) -> UIViewController {
-        // Create a live layout view controller for transcript presentation
+        // Create a live layout view controller ONLY for RSVP events
         if let selectedMessage = conversation.selectedMessage,
            let event = CalendarEvent(message: selectedMessage) {
             return LiveEventResponseViewController(event: event, participantID: participantID, delegate: self)
+        } else if let selectedMessage = conversation.selectedMessage,
+                  let scheduleEvent = ScheduleSelectionEvent(message: selectedMessage) {
+            // For scheduling events, show a simple tap-to-expand view in transcript
+            return ScheduleSelectionTapToExpandViewController(scheduleEvent: scheduleEvent)
         } else {
             // Fallback to compact view if no event is selected
             return createCompactViewController(for: conversation)
@@ -218,12 +227,17 @@ class MessagesViewController: MSMessagesAppViewController {
         if let selectedMessage = conversation.selectedMessage,
            let event = CalendarEvent(message: selectedMessage) {
             return EventDetailViewController(event: event, delegate: self)
+        } else if let selectedMessage = conversation.selectedMessage,
+                  let scheduleEvent = ScheduleSelectionEvent(message: selectedMessage) {
+            // For scheduling events, always show the full interactive view in expanded mode
+            return ScheduleSelectionViewController(scheduleEvent: scheduleEvent, delegate: self)
         } else {
             guard let eventStore = eventStore else {
                 // Return a simple view if EventStore is not available
                 return createFallbackCreateEventViewController()
             }
-            return CreateEventViewController(eventStore: eventStore, delegate: self)
+            // Show the main selection view that allows creating either regular events or schedule selections
+            return EventListViewController(delegate: self)
         }
     }
     
@@ -268,7 +282,7 @@ class MessagesViewController: MSMessagesAppViewController {
         alternateLayout.trailingCaption = event.location
         alternateLayout.image = createEventPreviewImage(for: event)
         
-        // Create live layout for interactive responses
+        // RSVP events use live layout for interactive responses
         let liveLayout = MSMessageLiveLayout(alternateLayout: alternateLayout)
         
         let message = MSMessage(session: session ?? MSSession())
@@ -338,14 +352,112 @@ class MessagesViewController: MSMessagesAppViewController {
         }
     }
     
-    // MARK: - Content Size Support
+    // MARK: - Schedule Selection Message Handling (Deferred Presentation)
+    private func composeScheduleSelectionMessage(with event: ScheduleSelectionEvent, caption: String, session: MSSession? = nil) -> MSMessage {
+        var components = URLComponents()
+        components.queryItems = event.queryItems
+        
+        // Scheduling events use ONLY template layout for deferred presentation
+        let templateLayout = MSMessageTemplateLayout()
+        templateLayout.caption = caption
+        templateLayout.subcaption = event.title
+        templateLayout.trailingCaption = "\(event.suggestedTimeSlots.count) options"
+        templateLayout.image = createScheduleSelectionPreviewImage(for: event)
+        templateLayout.imageTitle = "Tap to coordinate schedule"
+        templateLayout.imageSubtitle = "Choose your preferred times"
+        
+        let message = MSMessage(session: session ?? MSSession())
+        message.url = components.url!
+        message.layout = templateLayout // Use template layout for deferred presentation
+        message.summaryText = "\(event.organizerName) is coordinating: \(event.title)"
+        
+        return message
+    }
+    
+    private func createScheduleSelectionPreviewImage(for event: ScheduleSelectionEvent) -> UIImage {
+        let size = CGSize(width: 300, height: 200)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        
+        return renderer.image { context in
+            // Background gradient
+            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: [
+                UIColor.systemBlue.cgColor,
+                UIColor.systemPurple.cgColor
+            ] as CFArray, locations: [0.0, 1.0])!
+            
+            context.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: size.width, y: size.height), options: [])
+            
+            // Schedule icon background
+            UIColor.white.setFill()
+            let iconRect = CGRect(x: 20, y: 20, width: 60, height: 60)
+            context.fill(iconRect)
+            
+            // Calendar grid icon
+            UIColor.systemBlue.setFill()
+            context.fill(CGRect(x: 20, y: 20, width: 60, height: 15))
+            
+            // Grid lines
+            UIColor.systemGray.setStroke()
+            for i in 1..<4 {
+                let y = 35 + (15 * i)
+                context.cgContext.move(to: CGPoint(x: 25, y: y))
+                context.cgContext.addLine(to: CGPoint(x: 75, y: y))
+                context.cgContext.strokePath()
+            }
+            
+            for i in 1..<3 {
+                let x = 25 + (25 * i)
+                context.cgContext.move(to: CGPoint(x: x, y: 35))
+                context.cgContext.addLine(to: CGPoint(x: x, y: 75))
+                context.cgContext.strokePath()
+            }
+            
+            // Event title
+            let titleAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.boldSystemFont(ofSize: 18),
+                .foregroundColor: UIColor.white
+            ]
+            
+            let titleRect = CGRect(x: 100, y: 30, width: 180, height: 50)
+            event.title.draw(in: titleRect, withAttributes: titleAttributes)
+            
+            // Time options count
+            let subtitleAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 14),
+                .foregroundColor: UIColor.white.withAlphaComponent(0.9)
+            ]
+            
+            let optionsText = "\(event.suggestedTimeSlots.count) time options available"
+            let optionsRect = CGRect(x: 100, y: 85, width: 180, height: 30)
+            optionsText.draw(in: optionsRect, withAttributes: subtitleAttributes)
+            
+            // Response summary
+            let responseCount = event.participantResponses.count
+            if responseCount > 0 {
+                let responseText = "\(responseCount) response\(responseCount == 1 ? "" : "s")"
+                let responseRect = CGRect(x: 20, y: 160, width: 260, height: 20)
+                responseText.draw(in: responseRect, withAttributes: subtitleAttributes)
+            } else {
+                let responseText = "Waiting for responses..."
+                let responseRect = CGRect(x: 20, y: 160, width: 260, height: 20)
+                responseText.draw(in: responseRect, withAttributes: subtitleAttributes)
+            }
+        }
+    }
+    
+    // MARK: - Content Size Support (Live Layout Only)
     override func contentSizeThatFits(_ size: CGSize) -> CGSize {
-        // Return appropriate size for live layout in transcript presentation
+        // Return appropriate size for RSVP live layout in transcript presentation
         if presentationStyle == .transcript {
-            return CGSize(width: size.width, height: 160) // Compact height for live layout
+            // Only RSVP events have live layout, so this applies to them only
+            if let conversation = activeConversation,
+               let selectedMessage = conversation.selectedMessage,
+               CalendarEvent(message: selectedMessage) != nil {
+                return CGSize(width: size.width, height: 160) // Compact height for RSVP live layout
+            }
         }
         
-        // Default size for other presentation styles
+        // Default size for other presentation styles and scheduling events
         return super.contentSizeThatFits(size)
     }
 }
@@ -353,7 +465,27 @@ class MessagesViewController: MSMessagesAppViewController {
 // MARK: - EventListViewControllerDelegate
 extension MessagesViewController: EventListViewControllerDelegate {
     func eventListViewController(_ controller: EventListViewController, didSelectCreateEvent: Void) {
-        requestPresentationStyle(.expanded)
+        // Present regular event creation
+        guard let eventStore = eventStore else {
+            presentFallbackViewController()
+            return
+        }
+        
+        let createEventController = CreateEventViewController(eventStore: eventStore, delegate: self)
+        let navigationController = UINavigationController(rootViewController: createEventController)
+        present(navigationController, animated: true)
+    }
+    
+    func eventListViewController(_ controller: EventListViewController, didSelectCreateScheduleSelection: Void) {
+        // Present schedule selection creation
+        guard let eventStore = eventStore else {
+            presentFallbackViewController()
+            return
+        }
+        
+        let createScheduleController = CreateScheduleSelectionViewController(eventStore: eventStore, delegate: self)
+        let navigationController = UINavigationController(rootViewController: createScheduleController)
+        present(navigationController, animated: true)
     }
     
     func eventListViewController(_ controller: EventListViewController, didSelectEvent event: CalendarEvent) {
@@ -422,6 +554,85 @@ extension MessagesViewController: LiveEventResponseViewControllerDelegate {
     }
 }
 
+// MARK: - Schedule Selection Delegate Protocols
+extension MessagesViewController: ScheduleSelectionViewControllerDelegate {
+    func scheduleSelectionViewController(_ controller: ScheduleSelectionViewController, didSelectTimeSlots response: ScheduleSelectionEvent.ParticipantResponse) {
+        guard let conversation = activeConversation else { return }
+        
+        // Get the current schedule event from the selected message
+        if let selectedMessage = conversation.selectedMessage,
+           let scheduleEvent = ScheduleSelectionEvent(message: selectedMessage) {
+            handleScheduleSelectionResponse(event: scheduleEvent, response: response)
+        }
+    }
+    
+    func scheduleSelectionViewController(_ controller: ScheduleSelectionViewController, didSelectNoneWork response: ScheduleSelectionEvent.ParticipantResponse) {
+        guard let conversation = activeConversation else { return }
+        
+        if let selectedMessage = conversation.selectedMessage,
+           let scheduleEvent = ScheduleSelectionEvent(message: selectedMessage) {
+            handleScheduleSelectionResponse(event: scheduleEvent, response: response)
+        }
+    }
+    
+    func scheduleSelectionViewController(_ controller: ScheduleSelectionViewController, didRequestCustomAvailability event: ScheduleSelectionEvent) {
+        // Present the custom availability view controller
+        let customAvailabilityController = CustomAvailabilityViewController(scheduleEvent: event, delegate: self)
+        present(customAvailabilityController, animated: true)
+    }
+}
+
+// MARK: - Create Schedule Selection Delegate
+extension MessagesViewController: CreateScheduleSelectionViewControllerDelegate {
+    func createScheduleSelectionViewController(_ controller: CreateScheduleSelectionViewController, didCreateScheduleEvent event: ScheduleSelectionEvent) {
+        guard let conversation = activeConversation else { return }
+        
+        let message = composeScheduleSelectionMessage(
+            with: event,
+            caption: "📅 \(event.organizerName) is coordinating: \(event.title)",
+            session: conversation.selectedMessage?.session
+        )
+        
+        conversation.insert(message) { error in
+            if let error = error {
+                print("Error inserting schedule selection message: \(error)")
+            }
+        }
+        
+        dismiss()
+    }
+    
+    func createScheduleSelectionViewControllerDidCancel(_ controller: CreateScheduleSelectionViewController) {
+        dismiss()
+    }
+}
+
+// MARK: - Custom Availability Delegate
+extension MessagesViewController: CustomAvailabilityViewControllerDelegate {
+    func customAvailabilityViewController(_ controller: CustomAvailabilityViewController, didSelectCustomAvailability timeSlots: [TimeSlot]) {
+        controller.dismiss(animated: true) { [weak self] in
+            guard let self = self,
+                  let conversation = self.activeConversation,
+                  let selectedMessage = conversation.selectedMessage,
+                  let scheduleEvent = ScheduleSelectionEvent(message: selectedMessage) else { return }
+            
+            let response = ScheduleSelectionEvent.ParticipantResponse(
+                participantID: self.participantID,
+                selectedTimeSlots: [],
+                customAvailability: timeSlots,
+                responseStatus: .proposedAlternative,
+                responseDate: Date()
+            )
+            
+            self.handleScheduleSelectionResponse(event: scheduleEvent, response: response)
+        }
+    }
+    
+    func customAvailabilityViewControllerDidCancel(_ controller: CustomAvailabilityViewController) {
+        controller.dismiss(animated: true)
+    }
+}
+
 // MARK: - Shared Response Handling
 extension MessagesViewController {
     private func handleEventResponse(event: CalendarEvent, response: CalendarEvent.EventResponse) {
@@ -455,17 +666,59 @@ extension MessagesViewController {
         }
     }
     
+    // MARK: - Schedule Selection Message Handling
+    private func handleScheduleSelectionResponse(event: ScheduleSelectionEvent, response: ScheduleSelectionEvent.ParticipantResponse) {
+        guard let conversation = activeConversation else { return }
+        
+        var updatedEvent = event
+        updatedEvent.addParticipantResponse(response)
+        
+        let message = composeScheduleSelectionMessage(
+            with: updatedEvent,
+            caption: getScheduleResponseCaption(for: response),
+            session: conversation.selectedMessage?.session
+        )
+        
+        conversation.send(message) { error in
+            if let error = error {
+                print("Error responding to schedule selection: \(error)")
+            }
+        }
+        
+        // Don't dismiss for live layout - let it update in place
+        if presentationStyle != .transcript {
+            dismiss()
+        }
+    }
+    
+    private func getScheduleResponseCaption(for response: ScheduleSelectionEvent.ParticipantResponse) -> String {
+        switch response.responseStatus {
+        case .selectedSuggested:
+            let count = response.selectedTimeSlots.count
+            return "⏰ Selected \(count) time option\(count == 1 ? "" : "s")"
+        case .proposedAlternative:
+            let count = response.customAvailability?.count ?? 0
+            return "📅 Proposed \(count) alternative time\(count == 1 ? "" : "s")"
+        case .noneWork:
+            return "❌ None of the suggested times work"
+        case .pending:
+            return "⏳ Response pending"
+        }
+    }
+    
     private func addEventToCalendar(_ event: CalendarEvent) {
-        let calendarEvent = EKEvent(eventStore: eventStore!)
+        guard let eventStore = eventStore else { return }
+        
+        let calendarEvent = EKEvent(eventStore: eventStore)
         calendarEvent.title = event.title
         calendarEvent.startDate = event.startDate
         calendarEvent.endDate = event.endDate
         calendarEvent.location = event.location
         calendarEvent.notes = event.notes
-        calendarEvent.calendar = eventStore!.defaultCalendarForNewEvents
+        calendarEvent.calendar = eventStore.defaultCalendarForNewEvents
         
         do {
-            try eventStore!.save(calendarEvent, span: .thisEvent)
+            try eventStore.save(calendarEvent, span: .thisEvent)
         } catch {
             print("Error saving event to calendar: \(error)")
         }
@@ -476,6 +729,7 @@ extension MessagesViewController {
 protocol EventListViewControllerDelegate: AnyObject {
     func eventListViewController(_ controller: EventListViewController, didSelectCreateEvent: Void)
     func eventListViewController(_ controller: EventListViewController, didSelectEvent event: CalendarEvent)
+    func eventListViewController(_ controller: EventListViewController, didSelectCreateScheduleSelection: Void)
 }
 
 protocol CreateEventViewControllerDelegate: AnyObject {
@@ -493,4 +747,7 @@ protocol EventResponseViewControllerDelegate: AnyObject {
 
 protocol LiveEventResponseViewControllerDelegate: AnyObject {
     func liveEventResponseViewController(_ controller: LiveEventResponseViewController, didRespondToEvent event: CalendarEvent, with response: CalendarEvent.EventResponse)
-} 
+}
+
+
+
